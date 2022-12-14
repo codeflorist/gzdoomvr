@@ -122,6 +122,8 @@ typedef enum
 	CF_TOTALLYFROZEN	= 1 << 12,		// [RH] All players can do is press +use
 	CF_PREDICTING		= 1 << 13,		// [RH] Player movement is being predicted
 	CF_INTERPVIEW		= 1 << 14,		// [RH] view was changed outside of input, so interpolate one frame
+	CF_INTERPVIEWANGLES	= 1 << 15,		// [MR] flag for interpolating view angles without interpolating the entire frame
+	CF_SCALEDNOLERP		= 1 << 15,		// [MR] flag for applying angles changes in the ticrate without interpolating the frame
 	CF_EXTREMELYDEAD	= 1 << 22,		// [RH] Reliably let the status bar know about extreme deaths.
 	CF_BUDDHA2			= 1 << 24,		// [MC] Absolute buddha. No voodoo can kill it either.
 	CF_GODMODE2			= 1 << 25,		// [MC] Absolute godmode. No voodoo can kill it either.
@@ -396,8 +398,8 @@ public:
 	FString		SubtitleText;
 	int			SubtitleCounter;
 
-	DAngle			MinPitch = 0.;	// Viewpitch limits (negative is up, positive is down)
-	DAngle			MaxPitch = 0.;
+	DAngle			MinPitch = nullAngle;	// Viewpitch limits (negative is up, positive is down)
+	DAngle			MaxPitch = nullAngle;
 
 	double crouchfactor = 0;
 	double crouchoffset = 0;
@@ -407,7 +409,7 @@ public:
 
 	// [CW] I moved these here for multiplayer conversation support.
 	TObjPtr<AActor*> ConversationNPC = MakeObjPtr<AActor*>(nullptr), ConversationPC = MakeObjPtr<AActor*>(nullptr);
-	DAngle ConversationNPCAngle = 0.;
+	DAngle ConversationNPCAngle = nullAngle;
 	bool ConversationFaceTalker = false;
 
 	double GetDeltaViewHeight() const
@@ -448,6 +450,10 @@ public:
 	void SetFOV(float fov);
 	bool HasWeaponsInSlot(int slot) const;
 	bool Resurrect();
+
+	// Scaled angle adjustment info. Not for direct manipulation.
+	DRotator angleTargets;
+	DRotator angleAppliedAmounts;
 };
 
 // Bookkeeping on players - state.
@@ -479,5 +485,7 @@ inline bool AActor::IsNoClip2() const
 }
 
 bool P_IsPlayerTotallyFrozen(const player_t *player);
+
+bool P_NoInterpolation(player_t const *player, AActor const *actor);
 
 #endif // __D_PLAYER_H__

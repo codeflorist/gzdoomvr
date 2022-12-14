@@ -1183,7 +1183,6 @@ void FTextureManager::AddLocalizedVariants()
 //
 //==========================================================================
 FGameTexture *CreateShaderTexture(bool, bool);
-void InitBuildTiles();
 FImageSource* CreateEmptyTexture();
 
 void FTextureManager::Init()
@@ -1213,7 +1212,7 @@ void FTextureManager::Init()
 	AddGameTexture(mt);
 }
 
-void FTextureManager::AddTextures(void (*progressFunc_)(), void (*checkForHacks)(BuildInfo&))
+void FTextureManager::AddTextures(void (*progressFunc_)(), void (*checkForHacks)(BuildInfo&), void (*customtexturehandler)())
 {
 	progressFunc = progressFunc_;
 	//if (BuildTileFiles.Size() == 0) CountBuildTiles ();
@@ -1229,9 +1228,9 @@ void FTextureManager::AddTextures(void (*progressFunc_)(), void (*checkForHacks)
 	build.ResolveAllPatches();
 
 	// Add one marker so that the last WAD is easier to handle and treat
-	// Build tiles as a completely separate block.
+	// custom textures as a completely separate block.
 	FirstTextureForFile.Push(Textures.Size());
-	InitBuildTiles ();
+	if (customtexturehandler) customtexturehandler();
 	FirstTextureForFile.Push(Textures.Size());
 
 	DefaultTexture = CheckForTexture ("-NOFLAT-", ETextureType::Override, 0);
@@ -1301,11 +1300,12 @@ void FTextureManager::InitPalettedVersions()
 //
 //==========================================================================
 
-FTextureID FTextureManager::GetRawTexture(FTextureID texid)
+FTextureID FTextureManager::GetRawTexture(FTextureID texid, bool dontlookup)
 {
 	int texidx = texid.GetIndex();
 	if ((unsigned)texidx >= Textures.Size()) return texid;
-	if (Textures[texidx].FrontSkyLayer != -1) return FSetTextureID(Textures[texidx].FrontSkyLayer);
+	if (Textures[texidx].RawTexture != -1) return FSetTextureID(Textures[texidx].RawTexture);
+	if (dontlookup) return texid;
 
 	// Reject anything that cannot have been a front layer for the sky in original Hexen, i.e. it needs to be an unscaled wall texture only using Doom patches.
 	auto tex = Textures[texidx].Texture;
@@ -1485,7 +1485,7 @@ int FTextureManager::CountLumpTextures (int lumpnum)
 	if (lumpnum >= 0)
 	{
 		auto file = fileSystem.OpenFileReader (lumpnum); 
-		uint32_t numtex = file.ReadUInt32();;
+		uint32_t numtex = file.ReadUInt32();
 
 		return int(numtex) >= 0 ? numtex : 0;
 	}
@@ -1615,7 +1615,7 @@ void FTextureManager::AddAlias(const char* name, FGameTexture* tex)
 //
 //==========================================================================
 
-FTextureID FTextureID::operator +(int offset) throw()
+FTextureID FTextureID::operator +(int offset) const noexcept(true)
 {
 	if (!isValid()) return *this;
 	if (texnum + offset >= TexMan.NumTextures()) return FTextureID(-1);
