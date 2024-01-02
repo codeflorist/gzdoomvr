@@ -342,7 +342,7 @@ uint16_t FDecalLib::GetDecalID (FScanner &sc)
 	}
 	else
 	{
-		unsigned long num = strtoul (sc.String, NULL, 10);
+		uint64_t num = strtoull (sc.String, NULL, 10);
 		if (num < 1 || num > 65535)
 		{
 			sc.ScriptError ("Decal ID must be between 1 and 65535");
@@ -392,7 +392,7 @@ void FDecalLib::ParseDecal (FScanner &sc)
 		case DECAL_PIC:
 			sc.MustGetString ();
 			picnum = TexMan.CheckForTexture (sc.String, ETextureType::Any);
-			if (!picnum.Exists() && (lumpnum = fileSystem.CheckNumForName (sc.String, ns_graphics)) >= 0)
+			if (!picnum.Exists() && (lumpnum = fileSystem.CheckNumForName (sc.String, FileSys::ns_graphics)) >= 0)
 			{
 				picnum = TexMan.CreateTexture (lumpnum, ETextureType::Decal);
 			}
